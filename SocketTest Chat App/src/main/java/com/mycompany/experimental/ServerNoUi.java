@@ -50,29 +50,12 @@ public class ServerNoUi {
                             out.writeUTF("-f " + file.getName());
                             
                             // send file
-                            int count;
-                            byte[] buffer = new byte[65536];
-                            InputStream fileIn;
-                            try {
-                                fileIn = new FileInputStream(file);
-                                OutputStream fileOut = socket.getOutputStream();
-                                while ((count = fileIn.read(buffer)) > 0) {
-                                    fileOut.write(buffer, 0, count);
-                                }
-                                System.out.println("file sent");
-                                fileOut.flush();
-                                
-//                                    fileOut.close();
-//                                    fileIn.close();
-//                                    restStreams();
-                                try {
-                                    out = new DataOutputStream(socket.getOutputStream());
-                                } catch (IOException e) {
-                                    System.out.println(e.getMessage());
-                                }
-                            } catch (IOException e) {
-                                System.out.println(e.getMessage());
-                            }
+                            FileInputStream fileIn = new FileInputStream(file);
+                            byte[] buffer = new byte[(int)file.length()];
+                            fileIn.read(buffer);
+                            out.writeInt(buffer.length);
+                            out.write(buffer);
+                            out.flush();
                             //////////////////////////
                             
                         } else {
@@ -98,10 +81,30 @@ public class ServerNoUi {
         new Thread(() -> {
             while (true) {
                 try {
+
                     String msgIn = in.readUTF();
-                    System.out.println("From Client: " + msgIn);
-                    
-                } catch (IOException ex) {
+                    String[] args = msgIn.split(" ", 2);
+                    // if(msgIn starts with "-f ", that means next part of the msg will contain name of the file)
+                    if ("-f".equals(args[0]) && args.length == 2) {
+
+                        //file receive
+                        File file = new File(folderPath + args[1]);
+                        FileOutputStream fileOut;
+                        int fileLength = in.readInt();
+                        if(fileLength > 0){
+                            byte[] buffer = new byte[fileLength];
+                            in.readFully(buffer, 0, fileLength);
+                            fileOut = new FileOutputStream(file);
+                            fileOut.write(buffer, 0, fileLength);
+                            fileOut.close();
+                            System.out.println("File received");
+                            System.out.println("Saved in " + file.getAbsolutePath());
+                            msgIn = args[1];
+                        }
+                    }
+                    System.out.println("From Server: " + msgIn);
+
+                } catch (Exception ex) {
                     System.out.println(ex.getMessage());
                 }
             }

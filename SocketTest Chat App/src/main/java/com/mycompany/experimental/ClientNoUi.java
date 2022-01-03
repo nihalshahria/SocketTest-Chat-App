@@ -35,24 +35,38 @@ public class ClientNoUi {
                     String msgOut = inConsole.readLine();   //read input from terminal
                     String[] args = msgOut.split(" ", 2);
                     // if(msgOut starts with "-f ", that means next part of the msg will contain path of the file)
-
-                    if ("-f".equals(args[0]) && args.length == 2) {
+                    
+                    if ("-f".equals(args[0]) && args.length == 2) { 
                         String path = args[1];
                         System.out.println(path);
                         File file = new File(path);
                         if (file.exists()) {
                             System.out.println("Sent " + file.getPath());
                             out.writeUTF("-f " + file.getName());
-
+                            
+                            // send file
+                            FileInputStream fileIn = new FileInputStream(file);
+                            byte[] buffer = new byte[(int)file.length()];
+                            fileIn.read(buffer);
+                            out.writeInt(buffer.length);
+                            out.write(buffer);
+                            out.flush();
+                            //////////////////////////
+                            
                         } else {
                             System.out.println("File doesn't exist");
                         }
                     } else {
+                        
+                        // send message
                         System.out.println("From Client: " + msgOut);
                         out.writeUTF(msgOut);
+                        out.flush();
+                        ///////////////////
+                        
                     }
 
-                } catch (Exception ex) {
+                } catch (IOException ex) {
                     System.out.println(ex.getMessage());
                 }
             }
@@ -69,34 +83,18 @@ public class ClientNoUi {
                     if ("-f".equals(args[0]) && args.length == 2) {
 
                         //file receive
-                        InputStream fileIn = null;
-                        OutputStream fileOut = null;
                         File file = new File(folderPath + args[1]);
-                        try {
-                            fileIn = socket.getInputStream();
+                        FileOutputStream fileOut;
+                        int fileLength = in.readInt();
+                        if(fileLength > 0){
+                            byte[] buffer = new byte[fileLength];
+                            in.readFully(buffer, 0, fileLength);
                             fileOut = new FileOutputStream(file);
-                            int count;
-                            byte[] buffer = new byte[65536];
-                            while ((count = fileIn.read(buffer)) > 0) {
-                                fileOut.write(buffer, 0, count);
-                            }
-                            fileOut.flush();
-//                            fileIn.close();
-//                            fileOut.close();
-//                            System.out.println(file.getName() + " received");
-//                            System.out.println("file saved in " + file.getAbsolutePath());
-                            try {
-                                in = new DataInputStream(socket.getInputStream());
-
-                            } catch (Exception e) {
-                                System.out.println("in " + e.getMessage());
-                            }
-//                            restStreams();            F
-                            continue;
-                            //////////////////////
-
-                        } catch (Exception e) {
-                            System.out.println(e.getMessage());
+                            fileOut.write(buffer, 0, fileLength);
+                            fileOut.close();
+                            System.out.println("File received");
+                            System.out.println("Saved in " + file.getAbsolutePath());
+                            msgIn = args[1];
                         }
                     }
                     System.out.println("From Server: " + msgIn);
