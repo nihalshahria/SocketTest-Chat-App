@@ -8,7 +8,8 @@ import java.util.logging.*;
  *
  * @author nihalshahria
  */
-public class ChatHandlar extends Thread{
+public class ChatHandlar extends Thread {
+
     public String folderPath;
     public String userName;
     private final Socket socket;
@@ -16,7 +17,7 @@ public class ChatHandlar extends Thread{
     private final DataOutputStream out;
     private final BufferedReader inConsole;
 
-    public ChatHandlar(Socket socket, String userName) throws IOException{
+    public ChatHandlar(Socket socket, String userName) throws IOException {
         this.socket = socket;
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
@@ -26,14 +27,20 @@ public class ChatHandlar extends Thread{
 
     private boolean mkDir() {
         String user = System.getProperty("user.name");
-        folderPath = "/home/" + user + "/SocketApp/" + userName + "/"; //folderPath to save incoming files
+        String os = System.getProperty("os.name");
+        String[] oss = os.split(" ", 2);
+        if ("Windows".equals(oss[0])) {
+            folderPath = "C:\\Users\\" + user + "\\Downloads\\SocketApp\\" + userName + "\\"; //folderPath to save incoming files
+        } else {
+            folderPath = "/home/" + user + "/SocketApp/" + userName + "/"; //folderPath to save incoming files
+        }
         File dir = new File(folderPath);
         if (dir.exists()) {
             return false;
         }
         return dir.mkdirs();
     }
-    
+
     public void sendMessage() throws IOException {
         String msgOut = inConsole.readLine();   //read input from terminal
         msgOut = userName + "--> " + msgOut;
@@ -46,6 +53,9 @@ public class ChatHandlar extends Thread{
 //            msgOut = userName + "--> " + msgOut;
             System.out.println(msgOut);
             out.writeUTF(msgOut);
+//            out.writeInt(10);
+//            out.writeBoolean(true);
+
         }
         out.flush();
     }
@@ -61,6 +71,7 @@ public class ChatHandlar extends Thread{
             FileInputStream fileIn = new FileInputStream(file);
             byte[] buffer = new byte[(int) file.length()];
             fileIn.read(buffer);
+
             out.writeInt(buffer.length);
             out.write(buffer); // send file
         } else {
@@ -74,7 +85,7 @@ public class ChatHandlar extends Thread{
         // if(msgIn starts with "-f ", that means next part of the msg will contain name of the file)
         if ("-f".equals(args[1]) && args.length == 3) {
             receiveFile(args);   //file receive
-            msgIn = args[0] + " " +args[2];
+            msgIn = args[0] + " " + args[2];
         }
         System.out.println(msgIn);
     }
@@ -93,8 +104,8 @@ public class ChatHandlar extends Thread{
             System.out.println("Saved in " + file.getAbsolutePath());
         }
     }
-    
-    public void run(){
+
+    public void run() {
         mkDir();
         new Thread(() -> {
             while (true) {
