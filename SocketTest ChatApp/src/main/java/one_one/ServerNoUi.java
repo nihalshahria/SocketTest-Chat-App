@@ -1,4 +1,4 @@
-package result;
+package one_one;
 
 import java.io.*;
 import java.net.*;
