@@ -34,14 +34,14 @@ public class Client {
         System.out.println(msgIn);
     }
 
-
-    public void run() throws Exception {
+    public void run() {
         new Thread(() -> {
             while (true) {
                 try {
                     sendMessage();
                 } catch (Exception ex) {
                     System.out.println("Error: " + ex.getMessage());
+                    break;
                 }
             }
         }).start();
@@ -50,6 +50,7 @@ public class Client {
                 receiveMessage();
             } catch (Exception ex) {
                 System.out.println("Error: " + ex.getMessage());
+                break;
             }
         }
     }
